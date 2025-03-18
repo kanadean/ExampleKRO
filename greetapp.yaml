@@ -1,0 +1,9 @@
+apiVersion: kro.run/v1alpha1
+kind: GreetSleepRepeat
+metadata:
+  name: my-greet-app
+spec:
+  name: "my-greet-app"
+  my_greeting: "Hi there,"
+  my_name: "Aniket!"
+  duration: 30

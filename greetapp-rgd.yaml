@@ -1,0 +1,55 @@
+apiVersion: kro.run/v1alpha1
+kind: ResourceGraphDefinition
+metadata:
+  name: greet-app
+spec:
+  schema:
+    apiVersion: v1alpha1
+    kind: GreetSleepRepeat
+    spec:
+      # Basic types
+      name: string | required=true description="Name of App instance being deployed"
+      my_greeting: string | required=true description="How would I like to be greeted?"
+      my_name: string | required=true description="My Name"
+      duration: integer | default=60 description="Duration"
+      replicas: integer | default=1 minimum=1 maximum=100
+    status:
+      # Status fields with auto-inferred types
+      availableReplicas: ${deployment.status.availableReplicas}
+
+  resources:
+  - id: deployment
+    template:
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: ${schema.spec.name} # Use the name provided by user
+      spec:
+        replicas: ${schema.spec.replicas}
+        selector:
+          matchLabels:
+            app: ${schema.spec.name}
+        template:
+          metadata:
+            labels:
+              app: ${schema.spec.name}
+          spec:
+            containers:
+            - name: ${schema.spec.name}
+              image: busybox:latest # Use the image provided by user
+              command: [ "/bin/sh", "-c", "--" ]
+              args: [ "while true; do echo '${schema.spec.my_greeting} ${schema.spec.my_name}';sleep ${schema.spec.duration}; done;" ]     
+              ports:
+                - containerPort: 80                           
+  - id: service
+    template:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: ${schema.spec.name}-svc
+      spec:
+        selector: ${deployment.spec.selector.matchLabels} # Use the deployment selector
+        ports:
+          - protocol: TCP
+            port: 80
+            targetPort: 80
